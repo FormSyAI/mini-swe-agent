@@ -17,7 +17,7 @@ from jinja2 import StrictUndefined, Template
 from rich.live import Live
 
 from minisweagent import Environment
-from minisweagent.agents.default import DefaultAgent
+from minisweagent.agents.memory_bootstrap import MemoryBootstrapAgent
 from minisweagent.config import builtin_config_dir, get_config_from_spec
 from minisweagent.environments import get_environment
 from minisweagent.models import get_model
@@ -65,7 +65,7 @@ app = typer.Typer(rich_markup_mode="rich", add_completion=False)
 _OUTPUT_FILE_LOCK = threading.Lock()
 
 
-class ProgressTrackingAgent(DefaultAgent):
+class ProgressTrackingAgent(MemoryBootstrapAgent):
     """Simple wrapper around DefaultAgent that provides progress updates."""
 
     def __init__(self, *args, progress_manager: RunBatchProgressManager, instance_id: str = "", **kwargs):
@@ -163,9 +163,10 @@ def process_instance(
             env,
             progress_manager=progress_manager,
             instance_id=instance_id,
+            memory=config.get("memory", {}),
             **config.get("agent", {}),
         )
-        info = agent.run(task)
+        info = agent.run(task, instance_id=instance_id)
         exit_status = info.get("exit_status")
         result = info.get("submission")
     except Exception as e:
